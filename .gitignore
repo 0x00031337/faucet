@@ -1,0 +1,21 @@
+# Pipfiles, Pipfile.lock is used
+Pipfile.lock
+.venv
+
+# devlop static
+faucet/static
+faucet/transactions/static
+
+# develop
+db.develop
+docker-compose.yml
+docker-compose-prod.yml
+
+# home directory
+.bash_history
+.cache/
+.local/
+.virtualenvs
+.viminfo
+.idea
+.vscode

@@ -1,0 +1,19 @@
+[[source]]
+verify_ssl = true
+url = "https://pypi.org/simple"
+name = "pypi"
+
+[packages]
+django = "==2.1.2"
+djangorestframework = "==3.8.2"
+"psycopg2-binary" = "==2.7.5"
+requests = "==2.20.0"
+uWSGI = "==2.0.17.1"
+django-ratelimit = "==1.1.0"
+django-environ = "==0.4.5"
+python-monerorpc = "==0.5.3"
+
+[requires]
+python_version = "3.6"
+
+[dev-packages]

@@ -1,0 +1,86 @@
+version: '2'
+
+services:
+  monero-rpc:
+    image: xmrto/monero:v0.13.0.4
+    command: monero-wallet-rpc --stagenet --wallet-file test --password-file test.passwd --disable-rpc-login
+    volumes:
+      - <PATH_TO_XMR_WALLET>:/monero
+    expose:
+      - "38083"
+    environment:
+      - USER_ID=1000
+      - DAEMON_HOST=node.xmr.to
+      - DAEMON_PORT=38081
+      - LOG_LEVEL=0
+      - RPC_BIND_IP=0.0.0.0
+      - RPC_BIND_PORT=38083
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+    restart: unless-stopped
+  faucet:
+    build:
+      context: .
+      dockerfile: prod.Dockerfile
+      args:
+        SECRET_KEY: very_secure_SECRET_KEY
+    # network_mode: "host"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - monero-rpc
+      # - postgres
+    stdin_open: true
+    tty: true
+    environment:
+      # When set to Debug=False, use usWGI
+      - DEBUG=False
+      # MONERO_ENDPOINT is the endpoint used in the client to talk to the backend
+      # It is to be set when used in combination witha proxy to differentiate
+      # API callsandstatic contents of 2 faucets (stagenet/testnet) served by
+      # the same proxy.
+      # default is / (development)
+      # set to something else when used with proxy in prodcution
+      # ---
+      # REMEMBER the trailing '/'
+      # - MONERO_ENDPOINT=/
+      - MONERO_ENDPOINT=/faucet/stagenet/
+      - DEFAULT_MIXIN=10
+      # '$' now is a special character and needs to be escaped using `$$`
+      # may not start with '$' (also not '$$')
+      # https://github.com/docker/compose/issues/2507
+      - SECRET_KEY=<some_secret_key>
+      - CACHE_URL=locmemcache://
+      - FACTOR_BALANCE=10
+      - WALLET_HOST=monero-rpc
+      - WALLET_PORT=38083
+      - DAEMON_HOST=node.xmr.to
+      - DAEMON_PORT=38081
+      - PROTOCOL=http://
+      - ONCE_EVERY_N_MINUTE=5
+      ## work with sqlite3 as db backend
+      - DATABASE_URL=sqlite:////data/db.develop
+      ## When used with postgres locally
+      ## please uncomment the postgres service and volume below
+      ## please uncomment depends_on
+      ## Then uncomment DATABASE_URL (postgresql) and comment sqlite
+      # - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/transactions
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 10m
+        max-file: "3"
+#   postgres:
+#     image: postgres:9.6-alpine
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data
+#     expose:
+#       - "5432"
+#     environment:
+#       - POSTGRES_DB=transactions
+#
+# volumes:
+#   pgdata:

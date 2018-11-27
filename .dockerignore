@@ -1,0 +1,8 @@
+*
+!Dockerfile
+!faucet
+faucet/.local
+faucet/.cache
+faucet/.venv
+faucet/.virtualenvs
+*.pyc

@@ -1,0 +1,135 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  {% if monero_network %}
+  <div class="cr cr-top cr-left cr-sticky cr-green">
+    <title>Monero {{ monero_network|safe }} faucet</title>
+  </div>
+  {% endif %}
+  <script type="text/javascript" src="https://code.jquery.com/jquery.js"></script>
+  <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+  <link rel="stylesheet" href="{% static 'fonts/fonts.css' %}">
+  <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}">
+
+  <style type="text/css">
+    header, section, footer, aside, nav, article, figure, audio, video, canvas  { display:block; }
+  </style>
+</head>
+<body>
+  <noscript>
+    You need to enable JavaScript to run this app.
+  </noscript>
+  <div class="layout">
+    <div class="layout__header">
+      {% if monero_network %}
+      <h1 class="centered header">Monero {{ monero_network|safe }} faucet</h1>
+      {% endif %}
+    </div>
+    <div class="layout__content">
+      <div class="container" id="wrapper">
+        <div class="segment">
+          <div>
+            <div class="textBig bold">
+              Current balance: <span class="bold orange" id="balance"></span> XMR
+            </div>
+            <div class="address">
+              <div class="form__title">Wallet address:</div>
+              {% if wallet_address %}
+              <div class="code">
+                {{ wallet_address|safe }}
+              </div>
+              {% endif %}
+            </div>
+            <fieldset class="form">
+              <div class="form__title">Get XMR</div>
+              <div class="form__container">
+                <input class="input" id="address" name="address" placeholder="Enter monero address" type="text" required autofocus>
+                <button class="button" id="submit" name="submit" type="submit">
+                  Submit
+                  <div class="loader">Loading...</div>
+                </button>
+              </div>
+            </fieldset>
+            <div class="success" id="success"></div>
+            <div class="error" id="error"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+      $(document).ready(function(){
+
+        function get_balance(){
+          $.ajax({
+            {% if endpoint %}
+              url: "{{ endpoint|safe }}transactions/",
+            {% endif %}
+            cache: false,
+            success: function(data){
+              $("#balance").html(data.balance);
+            },
+            fail: function(jqXHR, textStatus, errorThrown) {
+              $("#balance").html('XMR');
+            }
+          });
+        };
+        get_balance(); // This will run on page load
+        setInterval(function(){
+            get_balance() // this will run after every 3 seconds
+        }, 3000);
+
+        $("#submit").click(function() {
+          var destination_address = $("#address").val();
+          $("#submit").addClass('loading');
+          var request = $.ajax({
+            {% if endpoint %}
+              url: "{{ endpoint|safe }}transactions/",
+            {% endif %}
+            type: "POST",
+            data: JSON.stringify({"destination_address" : destination_address}),
+            contentType: 'application/json; charset=utf-8',
+            dataType: "json"
+          });
+
+          request.success(function(data) {
+            $("#submit").removeClass('loading');
+            $("#success").html('<div>' +
+              '<div class="amount">Amount sent: ' + data.transaction.amount + ' XMR</div>' +
+              '<div>Transaction ID: ' + data.transaction.transaction_id + '</div>' +
+            '</div>');
+            $("#error").html('');
+          });
+
+          request.fail(function(jqXHR, textStatus, errorThrown) {
+            $("#submit").removeClass('loading');
+            $("#success").html('');
+            if (jqXHR.responseJSON == undefined) {
+                $("#error").html( textStatus + " (" + errorThrown + ")");
+            }
+            else {
+              var error = JSON.parse(jqXHR.responseText);
+              var errorString = '';
+              if (typeof error === 'object') {
+                Object.keys(error).forEach(function(key) {
+                  errorString = errorString + ' ' + Array.isArray(error[key]) ? error[key].join(' ') : error[key];
+              });
+              } else {
+                errorString = textStatus + " (" + errorThrown + ") " + jqXHR.responseText;
+              }
+
+              $("#error").html(errorString);
+            }
+          });
+        });
+
+    });
+  </script>
+</body>
+</html>

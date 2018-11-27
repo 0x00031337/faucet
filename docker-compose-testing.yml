@@ -1,0 +1,20 @@
+---
+version: '3'
+
+services:
+  faucet-testing:
+    build: .
+    command: pipenv run sh -c 'python manage.py test'
+    volumes:
+      - ./faucet:/data
+    environment:
+      - DEBUG=True
+      # '$' now is a special character and needs to be escaped using `$$`
+      # may not start with '$' (also not '$$')
+      # https://github.com/docker/compose/issues/2507
+      - SECRET_KEY=ljv75pcocve$$fx9l35^7i%nfo+!$$j805pe2xe9t154q8%a#dr$$
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
