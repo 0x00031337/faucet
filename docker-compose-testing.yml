@@ -4,7 +4,7 @@ version: '3'
 services:
   faucet-testing:
     build: .
-    command: pipenv run sh -c 'python manage.py test'
+    command: pipenv run sh -c 'python -Wa manage.py test'
     volumes:
       - ./faucet:/data
     environment:
