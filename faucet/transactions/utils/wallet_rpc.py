@@ -186,8 +186,10 @@ def get_balance():
         raise GetBalanceError("Could not get balance.")
 
 
-def get_amount(factor):
+def get_current_amount(factor):
     """Returns the calculated amount to transfer.
+    Due to scripts that drain the faucet, the maximum payout amount
+    is capped at settings.MAXIMUM_PAYOUT.
 
     :param factor: the factor to consider when paying out XMR
     :returns: the XMR to pay out (factored unlocked_balance)
@@ -196,5 +198,8 @@ def get_amount(factor):
     if factor <= 0:
         logger.error("Wrong factor provided: " + str(factor))
         raise GetAmountError("FACTOR=" + str(factor))
-
-    return balance // factor
+    payout = min(
+        tools.float_to_xmr(settings.MAXIMUM_PAYOUT), balance // factor
+    )
+    logger.info("Paying: {}".format(payout))
+    return payout

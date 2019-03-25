@@ -9,7 +9,7 @@ from django.shortcuts import render
 
 from .utils import tools
 from .serializers import TransactionSerializer
-from .exceptions import MakeTransactionError
+from .exceptions import MakeTransactionError, RatelimitedByWithdrawalsError
 
 import logging
 
@@ -26,12 +26,21 @@ def index(request):
     Configure text with monero network mode.
     Configure transaction endpoint with MONERO_ENDPOINT.
     """
+
+    network_type = WalletRPC.get_network_type()
+    network_type_other = ""
+    if network_type == "stagenet":
+        network_type_other = "testnet"
+    elif network_type == "testnet":
+        network_type_other = "stagenet"
+
     return render(
         request,
         "transactions/index.html",
         {
             "wallet_address": WalletRPC.get_address(),
-            "monero_network": WalletRPC.get_network_type(),
+            "monero_network": network_type,
+            "monero_network_other": network_type_other,
             "endpoint": settings.MONERO_ENDPOINT,
         },
     )

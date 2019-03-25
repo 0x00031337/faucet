@@ -3,6 +3,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="60">
   {% if monero_network %}
   <div class="cr cr-top cr-left cr-sticky cr-green">
     <title>Monero {{ monero_network|safe }} faucet</title>
@@ -29,6 +30,11 @@
     <div class="layout__header">
       {% if monero_network %}
       <h1 class="centered header">Monero {{ monero_network|safe }} faucet</h1>
+      {% endif %}
+      {% if monero_network %}  
+        <div class="centered footer__link">
+          <a href="https://community.xmr.to/faucet/{{ monero_network_other|safe }}/" target="_blank">Go to {{ monero_network_other|safe }} faucet</a>
+        </div>
       {% endif %}
     </div>
     <div class="layout__content">
@@ -81,9 +87,6 @@
           });
         };
         get_balance(); // This will run on page load
-        setInterval(function(){
-            get_balance() // this will run after every 3 seconds
-        }, 3000);
 
         $("#submit").click(function() {
           var destination_address = $("#address").val();
@@ -101,8 +104,8 @@
           request.success(function(data) {
             $("#submit").removeClass('loading');
             $("#success").html('<div>' +
-              '<div class="amount">Amount sent: ' + data.transaction.amount + ' XMR</div>' +
-              '<div>Transaction ID: ' + data.transaction.transaction_id + '</div>' +
+              '<div class="amount">Amount sent: ' + data.amount + ' XMR</div>' +
+              '<div>Transaction ID: ' + data.transaction_id + '</div>' +
             '</div>');
             $("#error").html('');
           });
@@ -118,7 +121,11 @@
               var errorString = '';
               if (typeof error === 'object') {
                 Object.keys(error).forEach(function(key) {
-                  errorString = errorString + ' ' + Array.isArray(error[key]) ? error[key].join(' ') : error[key];
+                  if (Array.isArray(error[key])) {
+                    errorString = errorString + ' ' + error[key].join(' ');
+                  } else {
+                    errorString = errorString + ' ' + error[key];
+                  }
               });
               } else {
                 errorString = textStatus + " (" + errorThrown + ") " + jqXHR.responseText;

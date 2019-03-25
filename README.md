@@ -50,6 +50,9 @@ In `docker-compose.yml` you will find some settings, you should be familiar with
     + Makes use of [`django-ratelimit`](https://github.com/jsocol/django-ratelimit).
   - `ONCE_EVERY_N_MINUTE` (**default**: `5`)
     + configures the faucet's rate limitation on API endpoint `transactions/` to **once per `n` minutes** where `n=ONCE_EVERY_N_MINUTE`.
+  - `MAXIMUM_PAYOUT` (**default**: `1`)
+    + sets the maximum XMR to pay to the user to `1 XMR`
+    + This was implemented due to the fact, that someone was draining the faucet with a script.
   - `DEBUG` (**default**: `True`)
     + Should be set to `False` in production
   - `SECRET_KEY` (**default**: `<some_secret_key>`)

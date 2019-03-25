@@ -3,12 +3,19 @@ import logging
 from rest_framework import serializers
 from django.conf import settings
 from django.core.validators import MinLengthValidator
+from django.http import JsonResponse
+from rest_framework import status
 
 from .models import Transaction
-from .exceptions import RpcConnectionError, MakeTransactionError
+from .exceptions import (
+    RpcConnectionError,
+    MakeTransactionError,
+    RatelimitedByWithdrawalsError,
+)
 
-from .utils.wallet_rpc import WalletRPC, get_amount
+from .utils.wallet_rpc import WalletRPC, get_current_amount
 from .utils import tools
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -47,11 +54,21 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     def save(self, **kwargs):
         try:
+            destination_address = self.validated_data.get(
+                "destination_address"
+            )
+            if tools.addr_withdrew_too_often(
+                destination_address=destination_address,
+                rate_allowed=settings.ADDRESS_RATE_PER_DAY,
+                days=1,
+            ):
+                logger.warning(
+                    "Blocked by number of withdrawals per day limitation."
+                )
+                raise RatelimitedByWithdrawalsError
             transaction = WalletRPC.make_transaction(
-                destination_address=self.validated_data.get(
-                    "destination_address"
-                ),
-                amount=get_amount(settings.FACTOR_BALANCE),
+                destination_address=destination_address,
+                amount=get_current_amount(settings.FACTOR_BALANCE),
             )
             self.validated_data.update(transaction)
             logger.info("store tx {}".format(transaction))

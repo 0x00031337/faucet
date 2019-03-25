@@ -9,6 +9,7 @@ services:
       - ./faucet:/data
     environment:
       - DEBUG=True
+      - RATELIMIT_ENABLE=False
       # '$' now is a special character and needs to be escaped using `$$`
       # may not start with '$' (also not '$$')
       # https://github.com/docker/compose/issues/2507

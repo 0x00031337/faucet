@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.conf import settings
 from rest_framework.test import APITestCase
 
@@ -13,9 +14,9 @@ from .utils import tools
 from .utils.wallet_rpc import WalletRPC
 from .utils.wallet_rpc import AuthServiceProxy
 
-logging.basicConfig()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+# logging.basicConfig()
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.DEBUG)
 
 
 def mocked_get_balance():
@@ -210,8 +211,11 @@ class TransactionsApiViewTests_Api(APITestCase):
         mocked_transaction = mocked_make_transaction(
             destination_address=destination_address, amount=0
         )
-        mocked_transaction["amount"] = tools.xmr_to_float(
-            mocked_get_balance() // settings.FACTOR_BALANCE
+        mocked_transaction["amount"] = min(
+            settings.MAXIMUM_PAYOUT,
+            tools.xmr_to_float(
+                mocked_get_balance() // settings.FACTOR_BALANCE
+            ),
         )
 
         # self.assertAlmostEqual(transaction.get("amount"), mocked_transaction.get("amount"))
@@ -236,6 +240,66 @@ class TransactionsApiViewTests_Api(APITestCase):
         self.assertNotIn(
             "ip_address_hash", Transaction.objects.get().ip_address_hash
         )
+
+    @mock.patch.object(WalletRPC, "get_balance", mocked_get_balance)
+    @mock.patch.object(
+        AuthServiceProxy, "_get_response", mocked_make_rpc_success
+    )
+    @mock.patch.object(WalletRPC, "make_transaction", mocked_make_transaction)
+    def test_rate_limitation_by_withdrawals(self):
+        """Destination addresses are allowed a specific number of withdrawals per day.
+
+        POST /transactions/
+        Requests to the wallet are mocked.
+        """
+
+        destination_address = "55YjCnmQ6NgM52yccJk23cR55h6wmuzw1fEHfeNVbdtPJ2v8GoByB9XDDi89dqhC4pTYRdssorqGWiXWeVywKVjtA8m5MZT"
+
+        # Same destination_address is allowed to withdraw only ADDRESS_RATE_PER_DAY times per day.
+        for i in range(settings.ADDRESS_RATE_PER_DAY):
+            response = self.client.post(
+                "/transactions/",
+                data={"destination_address": destination_address},
+            )
+
+            self.assertEqual(response.status_code, 201)
+            self.assertEqual(Transaction.objects.count(), i + 1)
+
+        # Next withdrawal is blocked.
+        response = self.client.post(
+            "/transactions/", data={"destination_address": destination_address}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Transaction.objects.count(), i + 1)
+
+    @mock.patch.object(WalletRPC, "get_balance", mocked_get_balance)
+    @mock.patch.object(
+        AuthServiceProxy, "_get_response", mocked_make_rpc_success
+    )
+    @mock.patch.object(WalletRPC, "make_transaction", mocked_make_transaction)
+    @override_settings(RATELIMIT_ENABLE=True)
+    def test_rate_limitation_by_IP(self):
+        """IPs are allowed once every settings.ONCE_EVERY_N_MINUTE minute.
+
+        POST /transactions/
+        Requests to the wallet are mocked.
+        """
+
+        destination_address = "55YjCnmQ6NgM52yccJk23cR55h6wmuzw1fEHfeNVbdtPJ2v8GoByB9XDDi89dqhC4pTYRdssorqGWiXWeVywKVjtA8m5MZT"
+
+        # IP is allowed to once.
+        response = self.client.post(
+            "/transactions/", data={"destination_address": destination_address}
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Transaction.objects.count(), 1)
+
+        # Next withdrawal is blocked.
+        response = self.client.post(
+            "/transactions/", data={"destination_address": destination_address}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Transaction.objects.count(), 1)
 
     @mock.patch.object(WalletRPC, "get_balance", mocked_get_balance)
     def test_get_current_balance(self):

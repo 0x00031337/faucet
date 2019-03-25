@@ -20,6 +20,7 @@ env = environ.Env(
     SECRET_KEY=(str, ""),
     RATELIMIT_ENABLE=(bool, False),
     FACTOR_BALANCE=(int, 10),
+    MAXIMUM_PAYOUT=(int, 1),
     PROTOCOL=(str, "http://"),
     WALLET_HOST=(str, "localhost"),
     WALLET_PORT=(int, 38083),
@@ -32,6 +33,8 @@ env = environ.Env(
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env("DEBUG")
+
+MAXIMUM_PAYOUT = env("MAXIMUM_PAYOUT")
 
 DEFAULT_MIXIN = env("DEFAULT_MIXIN")
 MONERO_ENDPOINT = env("MONERO_ENDPOINT")
@@ -110,6 +113,7 @@ DATABASES = {"default": env.db()}
 # RATELIMIT SETTINGS
 RATELIMIT_ENABLE = env("RATELIMIT_ENABLE")
 RATELIMIT_USE_CACHE = "default"
+ADDRESS_RATE_PER_DAY = 5
 
 CACHES = {"default": env.cache()}
 

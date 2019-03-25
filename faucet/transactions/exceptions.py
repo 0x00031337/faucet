@@ -1,4 +1,6 @@
 from rest_framework.exceptions import APIException
+from rest_framework import status
+from ratelimit.exceptions import Ratelimited
 
 
 class TransactionError(Exception):
@@ -34,3 +36,8 @@ class GetAmountError(APIException):
 class MakeTransactionError(APIException):
     status_code = 500
     default_detail = "Could not make transaction."
+
+
+class RatelimitedByWithdrawalsError(APIException):
+    status_code = status.HTTP_403_FORBIDDEN
+    default_detail = "Sorry you are blocked."

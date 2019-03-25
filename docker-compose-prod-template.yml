@@ -2,7 +2,7 @@ version: '2'
 
 services:
   monero-rpc:
-    image: xmrto/monero:v0.13.0.4
+    image: xmrto/monero:most_recent_tag
     command: monero-wallet-rpc --stagenet --wallet-file test --password-file test.passwd --disable-rpc-login
     volumes:
       - <PATH_TO_XMR_WALLET>:/monero

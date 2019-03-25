@@ -2,7 +2,7 @@ version: '2'
 
 services:
   monero-rpc:
-    image: xmrto/monero:v0.13.0.4
+    image: xmrto/monero:most_recent_tag
     command: monero-wallet-rpc --stagenet --wallet-file test --password-file test.passwd --disable-rpc-login
     volumes:
       # /monero in container should eventually contain wallet file etc.
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
   faucet:
     build: .
-    command: /bin/bash -c 'pipenv update && pipenv run sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"'
+    command: /bin/bash -c 'pipenv --three && pipenv update && pipenv run sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"'
     # command: /bin/bash -c 'pipenv update && pipenv run sh -c "python manage.py collectstatic --noinput -i rest_framework -i admin && python manage.py makemigrations && python manage.py migrate && ./start_uwsgi_server.sh"'
     ports:
       - "8000:8000"
@@ -57,6 +57,7 @@ services:
       - SECRET_KEY=<some_secret_key>
       - CACHE_URL=locmemcache://
       - FACTOR_BALANCE=10
+      - MAXIMUM_PAYOUT=1
       - WALLET_HOST=monero-rpc
       - WALLET_PORT=38083
       - DAEMON_HOST=node.xmr.to

@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.6-alpine
 
 # se a shell for 'pipenv shell'
 ENV SHELL /bin/bash
@@ -10,18 +10,26 @@ VOLUME ["/data"]
 
 # install necessary software
 # install pipenv for virtual environments
-RUN apt-get update \
-    && apt-get install -y vim \
-    && apt-get install -y python3-pip python3-dev libpq-dev \
-    && apt-get autoremove -y --purge \
-    && apt-get autoclean \
-    && rm -rf /var/tmp/* /tmp/* /var/lib/apt/lists/* \
+RUN apk add --no-cache \
+        --virtual .build_deps \
+            gcc \
+            linux-headers \
+            python3-dev \
+    && apk add --no-cache \
+        vim \
+        bash \
+        # python3-pip \
+        python3-dev \
+        postgresql-dev \
+        musl-dev \
+    && rm -rf /var/cache/apk/* \
     && pip install --upgrade pip \
     && pip install --upgrade pipenv \
-    && useradd -u 1000 -U -ms /bin/bash -p '*' -d /data faucet_user
+    && adduser -u 1000 -s /bin/false -D faucet
+    # && useradd -u 1000 -U -ms /bin/bash -p '*' -d /data faucet
 
 # switch user
-USER faucet_user
+USER faucet
 
 ENV FAUCET_PORT 8000
 EXPOSE 8000

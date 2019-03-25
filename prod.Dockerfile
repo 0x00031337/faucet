@@ -4,17 +4,25 @@ ENV PIPENV_VENV_IN_PROJECT true
 
 # install necessary software
 # install pipenv for virtual environments
-RUN apk add --no-cache gcc linux-headers python3-dev postgresql-dev musl-dev \
+RUN apk add --no-cache \
+        --virtual .build_deps \
+            gcc \
+            linux-headers \
+            python3-dev \
+    && apk add --no-cache \
+        postgresql-dev \
+        musl-dev \
     && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir --upgrade pipenv \
     && adduser -u 1000 -s /bin/false -D faucet \
     && mkdir -p /data/tmp \
-    && chown -R faucet:faucet /data/tmp && ls -l /data
+    && chown -R faucet:faucet /data/tmp \
+    && ls -l /data
 
 WORKDIR /data
 
-COPY ./faucet /data
-RUN chown -R faucet:faucet /data
+COPY --chown=faucet:faucet ./faucet /data
+RUN chown faucet:faucet /data
 
 ENV FAUCET_PORT 8000
 EXPOSE $FAUCET_PORT
@@ -25,7 +33,7 @@ ENV SECRET_KEY=$SECRET_KEY
 RUN pipenv --three \
     && pipenv update
 
-RUN apk del python3-dev gcc linux-headers \
+RUN apk del .build_deps \
     && rm -rf /var/cache/apk/*
 
 
